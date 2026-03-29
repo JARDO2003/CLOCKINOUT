@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MarcioStudio — Administration</title>
+<link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Cabinet+Grotesk:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#050810;--bg2:#080c1a;--bg3:#0d1226;--card:#0f1830;--card2:#141e3a;
+  --gold:#e8b84b;--gold2:#f5d06e;--gold3:rgba(232,184,75,.12);--gold4:rgba(232,184,75,.06);
+  --blue:#4f8ef7;--blue2:#7aaeff;--violet:#8b5cf6;
+  --text:#eef2ff;--muted:#7c8db5;--dim:#2e3d6b;
+  --red:#ef4444;--green:#22c55e;--orange:#f97316;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Cabinet Grotesk',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 50% 35% at 80% 5%,rgba(232,184,75,.05) 0%,transparent 55%),
+             radial-gradient(ellipse 40% 30% at 10% 90%,rgba(79,142,247,.05) 0%,transparent 55%)}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes slideIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+
+/* ── TOPBAR ── */
+.topbar{
+  position:fixed;top:0;left:0;right:0;z-index:100;height:65px;
+  display:flex;align-items:center;justify-content:space-between;padding:0 28px;
+  background:rgba(5,8,16,.93);backdrop-filter:blur(28px);
+  border-bottom:1px solid rgba(232,184,75,.1);
+}
+.t-logo{display:flex;align-items:center;gap:10px;font-family:'Clash Display',sans-serif;font-weight:700;font-size:1.05rem}
+.mark{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--gold),#d4a432);display:flex;align-items:center;justify-content:center;color:var(--bg);font-size:.85rem}
+.t-logo span{color:var(--gold)}
+.admin-badge{padding:4px 12px;border-radius:100px;background:rgba(232,184,75,.12);border:1px solid rgba(232,184,75,.25);color:var(--gold);font-size:.68rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase}
+.t-right{display:flex;align-items:center;gap:12px}
+.btn-back{padding:8px 18px;border-radius:10px;border:1px solid var(--dim);background:transparent;color:var(--muted);font-family:'Cabinet Grotesk',sans-serif;font-size:.82rem;cursor:pointer;transition:all .2s}
+.btn-back:hover{border-color:var(--gold);color:var(--gold)}
+.btn-logout{padding:8px 16px;border-radius:10px;border:1px solid rgba(239,68,68,.2);background:rgba(239,68,68,.07);color:#fca5a5;font-family:'Cabinet Grotesk',sans-serif;font-size:.78rem;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-logout:hover{background:rgba(239,68,68,.15)}
+
+/* ── SIDEBAR + LAYOUT ── */
+.layout{display:flex;padding-top:65px;min-height:100vh}
+.sidebar{
+  position:fixed;top:65px;left:0;bottom:0;width:240px;z-index:80;
+  background:var(--bg2);border-right:1px solid rgba(232,184,75,.07);
+  padding:24px 16px;display:flex;flex-direction:column;gap:4px;overflow-y:auto;
+}
+.sidebar-section{font-size:.65rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:1px;padding:0 12px;margin:16px 0 6px}
+.sidebar-section:first-child{margin-top:0}
+.nav-item{
+  display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;
+  cursor:pointer;transition:all .22s;color:var(--muted);font-size:.85rem;font-weight:500;
+  border:1px solid transparent;
+}
+.nav-item:hover{background:rgba(255,255,255,.04);color:var(--text)}
+.nav-item.on{background:var(--gold3);border-color:rgba(232,184,75,.2);color:var(--gold);font-weight:700}
+.nav-icon{font-size:1.1rem;flex-shrink:0}
+.nav-badge{margin-left:auto;background:var(--gold3);color:var(--gold);font-size:.65rem;font-weight:700;padding:2px 7px;border-radius:100px}
+
+/* ── MAIN ── */
+.main{margin-left:240px;flex:1;padding:28px;animation:fadeUp .3s ease}
+.page{display:none}
+.page.on{display:block}
+.page-title{font-family:'Clash Display',sans-serif;font-size:1.7rem;font-weight:700;margin-bottom:6px;letter-spacing:-.5px}
+.page-sub{color:var(--muted);font-size:.88rem;margin-bottom:28px}
+
+/* KPI STRIP */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+.kpi-box{
+  background:var(--card);border:1px solid rgba(232,184,75,.07);border-radius:18px;
+  padding:22px;position:relative;overflow:hidden;transition:all .28s;
+}
+.kpi-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--kpi-color,var(--gold));opacity:.6}
+.kpi-box:hover{border-color:rgba(232,184,75,.18);transform:translateY(-2px)}
+.kpi-icon{font-size:1.6rem;margin-bottom:12px}
+.kpi-val{font-family:'Clash Display',sans-serif;font-size:2.2rem;font-weight:700;margin-bottom:4px;background:linear-gradient(135deg,var(--gold),var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.kpi-label{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:600}
+
+/* CARD */
+.acard{background:var(--card);border:1px solid rgba(232,184,75,.07);border-radius:20px;padding:24px;margin-bottom:22px}
+.acard-title{font-family:'Clash Display',sans-serif;font-size:1rem;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.acard-sub{font-size:.78rem;color:var(--muted);margin-bottom:20px}
+
+/* TABLE */
+.data-table{width:100%;border-collapse:collapse}
+.data-table th{text-align:left;font-size:.68rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.7px;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04)}
+.data-table td{padding:14px;border-bottom:1px solid rgba(255,255,255,.03);font-size:.85rem;vertical-align:middle}
+.data-table tr:last-child td{border:none}
+.data-table tr:hover td{background:rgba(232,184,75,.03)}
+.u-row-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--gold),#d4a432);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--bg);font-size:.75rem;overflow:hidden;flex-shrink:0}
+.u-row-av img{width:100%;height:100%;object-fit:cover}
+.user-cell{display:flex;align-items:center;gap:10px}
+.badge{padding:3px 9px;border-radius:100px;font-size:.67rem;font-weight:700;letter-spacing:.3px}
+.b-green{background:rgba(34,197,94,.12);color:#86efac}
+.b-gold{background:var(--gold3);color:var(--gold)}
+.b-blue{background:rgba(79,142,247,.12);color:var(--blue2)}
+.b-red{background:rgba(239,68,68,.1);color:#fca5a5}
+.b-orange{background:rgba(249,115,22,.12);color:var(--orange)}
+.b-violet{background:rgba(139,92,246,.12);color:#c4b5fd}
+
+/* ── NOTIFICATION PANEL ── */
+.notif-tabs{display:flex;gap:4px;background:rgba(255,255,255,.04);border-radius:13px;padding:4px;margin-bottom:22px}
+.ntab{flex:1;padding:10px;border-radius:10px;border:none;background:transparent;color:var(--muted);font-family:'Cabinet Grotesk',sans-serif;font-size:.85rem;font-weight:500;cursor:pointer;transition:all .22s;text-align:center}
+.ntab.on{background:linear-gradient(135deg,var(--gold),#d4a432);color:var(--bg);font-weight:700}
+.notif-panel{display:none}
+.notif-panel.on{display:block}
+
+/* FORM */
+.fg{margin-bottom:16px}
+.fl{display:block;font-size:.7rem;font-weight:700;color:var(--muted);margin-bottom:8px;letter-spacing:.6px;text-transform:uppercase}
+.fi,.fs,.fat{
+  width:100%;padding:13px 16px;border-radius:12px;background:rgba(255,255,255,.04);
+  border:1px solid rgba(232,184,75,.12);color:var(--text);font-family:'Cabinet Grotesk',sans-serif;
+  font-size:.9rem;outline:none;transition:all .22s;
+}
+.fi:focus,.fs:focus,.fat:focus{border-color:var(--gold);background:rgba(232,184,75,.04);box-shadow:0 0 0 3px rgba(232,184,75,.08)}
+.fi::placeholder,.fat::placeholder{color:rgba(124,141,181,.3)}
+.fs option{background:var(--bg2)}
+.fat{resize:vertical;min-height:90px}
+
+.user-checkboxes{max-height:280px;overflow-y:auto;border:1px solid rgba(232,184,75,.12);border-radius:14px;padding:12px;scrollbar-width:thin;scrollbar-color:var(--dim) transparent}
+.user-check-item{display:flex;align-items:center;gap:11px;padding:10px;border-radius:10px;cursor:pointer;transition:all .18s}
+.user-check-item:hover{background:var(--gold4)}
+.user-check-item input{width:16px;height:16px;accent-color:var(--gold);cursor:pointer;flex-shrink:0}
+.check-av{width:30px;height:30px;border-radius:50%;background:var(--gold3);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:var(--gold);overflow:hidden;flex-shrink:0}
+.check-av img{width:100%;height:100%;object-fit:cover}
+.check-name{font-size:.85rem;font-weight:600}
+.check-dept{font-size:.72rem;color:var(--muted)}
+.select-all-bar{display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:0 4px}
+.select-all-btn{padding:5px 12px;border-radius:8px;border:1px solid rgba(232,184,75,.2);background:var(--gold4);color:var(--gold);font-family:'Cabinet Grotesk',sans-serif;font-size:.75rem;font-weight:700;cursor:pointer;transition:all .2s}
+.select-all-btn:hover{background:var(--gold3)}
+.selected-count{font-size:.78rem;color:var(--muted);margin-left:auto}
+
+.btn-send{
+  padding:14px 28px;border-radius:13px;border:none;
+  background:linear-gradient(135deg,var(--gold),#d4a432);color:var(--bg);
+  font-family:'Clash Display',sans-serif;font-size:.95rem;font-weight:700;
+  cursor:pointer;transition:all .25s;display:flex;align-items:center;gap:9px;
+}
+.btn-send:hover{transform:translateY(-2px);box-shadow:0 10px 32px rgba(232,184,75,.3)}
+.btn-send:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-danger{
+  padding:8px 16px;border-radius:10px;border:1px solid rgba(239,68,68,.3);
+  background:rgba(239,68,68,.08);color:#fca5a5;font-family:'Cabinet Grotesk',sans-serif;
+  font-size:.78rem;font-weight:600;cursor:pointer;transition:all .2s;
+}
+.btn-danger:hover{background:rgba(239,68,68,.18)}
+.btn-action{
+  padding:7px 14px;border-radius:9px;border:1px solid rgba(232,184,75,.2);
+  background:var(--gold4);color:var(--gold);font-family:'Cabinet Grotesk',sans-serif;
+  font-size:.75rem;font-weight:700;cursor:pointer;transition:all .2s;
+}
+.btn-action:hover{background:var(--gold3)}
+
+/* GPS CONFIG */
+.gps-map-preview{
+  height:160px;background:linear-gradient(135deg,var(--card2),var(--bg3));
+  border-radius:14px;border:1px solid rgba(232,184,75,.1);
+  display:flex;align-items:center;justify-content:center;
+  font-size:2.5rem;margin-bottom:16px;
+}
+.gps-row{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end}
+
+/* NOTIF HISTORY */
+.notif-hist-item{display:flex;align-items:flex-start;gap:14px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.notif-hist-item:last-child{border:none}
+.nh-icon{width:38px;height:38px;border-radius:11px;background:var(--gold3);border:1px solid rgba(232,184,75,.2);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+.nh-info{flex:1}
+.nh-title{font-size:.88rem;font-weight:700;margin-bottom:4px}
+.nh-body{font-size:.78rem;color:var(--muted);margin-bottom:4px}
+.nh-meta{font-size:.7rem;color:var(--dim)}
+
+/* STATUS BARS */
+.stat-bar-wrap{margin-bottom:10px}
+.stat-bar-label{display:flex;justify-content:space-between;font-size:.78rem;color:var(--muted);margin-bottom:5px}
+.stat-bar-track{height:6px;background:var(--dim);border-radius:100px;overflow:hidden}
+.stat-bar-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--gold),var(--gold2));transition:width 1s ease}
+
+/* TOASTS */
+.toasts{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:10px;pointer-events:none}
+.toast{padding:13px 18px;border-radius:14px;max-width:300px;font-size:.84rem;font-weight:500;animation:slideIn .3s ease;pointer-events:all;backdrop-filter:blur(12px)}
+.t-ok{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);color:#86efac}
+.t-err{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);color:#fca5a5}
+.t-info{background:rgba(79,142,247,.12);border:1px solid rgba(79,142,247,.35);color:var(--blue2)}
+.spinner{width:17px;height:17px;border:2px solid transparent;border-top-color:var(--bg);border-radius:50%;animation:spin .7s linear infinite}
+
+@media(max-width:900px){
+  .sidebar{width:200px}
+  .main{margin-left:200px}
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:650px){
+  .sidebar{display:none}
+  .main{margin-left:0;padding:18px}
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:14px">
+    <div class="t-logo">
+      <div class="mark">M</div>
+      Marcio<span>Studio</span>
+    </div>
+    <div class="admin-badge">🛡️ Admin</div>
+  </div>
+  <div class="t-right">
+    <button class="btn-back" onclick="location.href='index.html'">← Accueil</button>
+    <button class="btn-logout" onclick="doLogout()">Déconnexion</button>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-section">Tableau de bord</div>
+    <div class="nav-item on" onclick="goPage('overview',this)"><span class="nav-icon">📊</span>Vue générale</div>
+    
+    <div class="sidebar-section">Personnel</div>
+    <div class="nav-item" onclick="goPage('users',this)"><span class="nav-icon">👥</span>Collaborateurs</div>
+    <div class="nav-item" onclick="goPage('presence',this)"><span class="nav-icon">⏱</span>Présences</div>
+    
+    <div class="sidebar-section">Communication</div>
+    <div class="nav-item" onclick="goPage('notifications',this)"><span class="nav-icon">🔔</span>Notifications <span class="nav-badge">FCM</span></div>
+    <div class="nav-item" onclick="goPage('posts',this)"><span class="nav-icon">💬</span>Publications</div>
+    
+    <div class="sidebar-section">Configuration</div>
+    <div class="nav-item" onclick="goPage('gps',this)"><span class="nav-icon">📍</span>Zone GPS</div>
+    <div class="nav-item" onclick="goPage('settings',this)"><span class="nav-icon">⚙️</span>Paramètres</div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- OVERVIEW -->
+    <div class="page on" id="pg-overview">
+      <div class="page-title">Vue générale</div>
+      <div class="page-sub">Tableau de bord en temps réel — MarcioStudio</div>
+      <div class="kpi-grid">
+        <div class="kpi-box" style="--kpi-color:#e8b84b">
+          <div class="kpi-icon">👥</div>
+          <div class="kpi-val" id="kpi-users">—</div>
+          <div class="kpi-label">Collaborateurs</div>
+        </div>
+        <div class="kpi-box" style="--kpi-color:#22c55e">
+          <div class="kpi-icon">✅</div>
+          <div class="kpi-val" id="kpi-present">—</div>
+          <div class="kpi-label">Présents aujourd'hui</div>
+        </div>
+        <div class="kpi-box" style="--kpi-color:#f97316">
+          <div class="kpi-icon">⚠️</div>
+          <div class="kpi-val" id="kpi-late">—</div>
+          <div class="kpi-label">Retards aujourd'hui</div>
+        </div>
+        <div class="kpi-box" style="--kpi-color:#4f8ef7">
+          <div class="kpi-icon">💬</div>
+          <div class="kpi-val" id="kpi-posts">—</div>
+          <div class="kpi-label">Publications</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+        <div class="acard">
+          <div class="acard-title">📈 Taux de présence — 7 derniers jours</div>
+          <div class="acard-sub">Pourcentage de présence quotidien</div>
+          <div id="presence-bars">
+            <div style="text-align:center;padding:20px;color:var(--dim)">Chargement…</div>
+          </div>
+        </div>
+        <div class="acard">
+          <div class="acard-title">🔔 Dernières notifications envoyées</div>
+          <div class="acard-sub">Historique FCM</div>
+          <div id="recent-notifs">
+            <div style="text-align:center;padding:20px;color:var(--dim)">Chargement…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- USERS -->
+    <div class="page" id="pg-users">
+      <div class="page-title">Collaborateurs</div>
+      <div class="page-sub">Gestion de tous les membres MarcioStudio</div>
+      <div class="acard">
+        <div class="acard-title">👥 Tous les collaborateurs <span id="users-count" style="font-size:.8rem;color:var(--muted);font-weight:400"></span></div>
+        <div class="acard-sub">Cliquez sur un collaborateur pour gérer son compte</div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Collaborateur</th>
+                <th>Département</th>
+                <th>Rôle</th>
+                <th>Email</th>
+                <th>FCM</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody">
+              <tr><td colspan="6" style="text-align:center;color:var(--dim);padding:24px">Chargement…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRESENCE -->
+    <div class="page" id="pg-presence">
+      <div class="page-title">Présences du jour</div>
+      <div class="page-sub">Pointages en temps réel — <span id="today-label">—</span></div>
+      <div class="acard">
+        <div class="acard-title">⏱ Pointages du <span id="today-label2">—</span></div>
+        <div class="acard-sub">Mise à jour en temps réel via Firestore</div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Collaborateur</th>
+                <th>Département</th>
+                <th>Entrée</th>
+                <th>Sortie</th>
+                <th>Durée</th>
+                <th>Statut</th>
+              </tr>
+            </thead>
+            <tbody id="presence-tbody">
+              <tr><td colspan="6" style="text-align:center;color:var(--dim);padding:24px">Chargement…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTIFICATIONS -->
+    <div class="page" id="pg-notifications">
+      <div class="page-title">Notifications FCM</div>
+      <div class="page-sub">Envoyez des notifications push à votre équipe via Firebase Cloud Messaging</div>
+      
+      <div class="notif-tabs">
+        <button class="ntab on" onclick="switchNotifTab('all',this)">📢 Notification globale</button>
+        <button class="ntab" onclick="switchNotifTab('targeted',this)">🎯 Ciblée</button>
+        <button class="ntab" onclick="switchNotifTab('history',this)">📋 Historique</button>
+      </div>
+
+      <!-- ALL USERS -->
+      <div class="notif-panel on" id="np-all">
+        <div class="acard">
+          <div class="acard-title">📢 Notification à tous les collaborateurs</div>
+          <div class="acard-sub">Le message sera envoyé à tous les membres qui ont activé les notifications push</div>
+          <div class="fg">
+            <label class="fl">Titre de la notification</label>
+            <input type="text" class="fi" id="notif-all-title" placeholder="Ex: Réunion d'équipe à 14h00">
+          </div>
+          <div class="fg">
+            <label class="fl">Message</label>
+            <textarea class="fat" id="notif-all-body" placeholder="Entrez votre message ici…" rows="4"></textarea>
+          </div>
+          <div class="fg">
+            <label class="fl">Icône / Emoji (optionnel)</label>
+            <input type="text" class="fi" id="notif-all-icon" placeholder="🔔" style="font-size:1.2rem">
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;margin-top:8px">
+            <button class="btn-send" id="btn-send-all" onclick="sendToAll()">
+              <span>📢 Envoyer à tous</span>
+            </button>
+            <div id="all-recipient-count" style="font-size:.82rem;color:var(--muted)">Chargement du nombre de destinataires…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TARGETED -->
+      <div class="notif-panel" id="np-targeted">
+        <div class="acard">
+          <div class="acard-title">🎯 Notification ciblée</div>
+          <div class="acard-sub">Sélectionnez les collaborateurs spécifiques à notifier</div>
+          <div class="fg">
+            <label class="fl">Titre</label>
+            <input type="text" class="fi" id="notif-t-title" placeholder="Titre de la notification">
+          </div>
+          <div class="fg">
+            <label class="fl">Message</label>
+            <textarea class="fat" id="notif-t-body" placeholder="Votre message…" rows="3"></textarea>
+          </div>
+          <div class="fg">
+            <label class="fl">Destinataires</label>
+            <div class="select-all-bar">
+              <button class="select-all-btn" onclick="selectAllUsers(true)">Tout sélectionner</button>
+              <button class="select-all-btn" onclick="selectAllUsers(false)">Déselectionner</button>
+              <span class="selected-count" id="selected-count">0 sélectionné(s)</span>
+            </div>
+            <div class="user-checkboxes" id="user-checkboxes">
+              <div style="text-align:center;padding:20px;color:var(--dim)">Chargement…</div>
+            </div>
+          </div>
+          <button class="btn-send" id="btn-send-targeted" onclick="sendToSelected()" style="margin-top:8px">
+            <span>🎯 Envoyer aux sélectionnés</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- HISTORY -->
+      <div class="notif-panel" id="np-history">
+        <div class="acard">
+          <div class="acard-title">📋 Historique des notifications</div>
+          <div class="acard-sub">Les 50 dernières notifications envoyées</div>
+          <div id="notif-history-list">
+            <div style="text-align:center;padding:24px;color:var(--dim)">Chargement…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- POSTS -->
+    <div class="page" id="pg-posts">
+      <div class="page-title">Publications</div>
+      <div class="page-sub">Modérez le fil d'actualité de votre équipe</div>
+      <div class="acard">
+        <div class="acard-title">💬 Toutes les publications</div>
+        <div class="acard-sub">Vous pouvez supprimer toute publication inappropriée</div>
+        <div id="posts-list">
+          <div style="text-align:center;padding:24px;color:var(--dim)">Chargement…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GPS -->
+    <div class="page" id="pg-gps">
+      <div class="page-title">Zone GPS</div>
+      <div class="page-sub">Configurez le périmètre de pointage autorisé</div>
+      <div class="acard">
+        <div class="acard-title">📍 Configuration de la zone de pointage</div>
+        <div class="acard-sub">Les collaborateurs ne pourront pointer que dans ce périmètre</div>
+        <div class="gps-map-preview">🗺️</div>
+        <div class="gps-row">
+          <div class="fg" style="margin:0">
+            <label class="fl">Latitude</label>
+            <input type="number" class="fi" id="gps-lat" step="0.0001" placeholder="6.3654">
+          </div>
+          <div class="fg" style="margin:0">
+            <label class="fl">Longitude</label>
+            <input type="number" class="fi" id="gps-lng" step="0.0001" placeholder="2.4183">
+          </div>
+          <button class="btn-action" onclick="saveGPS()" style="white-space:nowrap">💾 Sauvegarder</button>
+        </div>
+        <div class="fg" style="margin-top:14px">
+          <label class="fl">Rayon autorisé (mètres)</label>
+          <input type="number" class="fi" id="gps-radius" placeholder="300" value="300">
+        </div>
+        <button class="btn-action" onclick="useMyLocation()">📍 Utiliser ma position actuelle</button>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="pg-settings">
+      <div class="page-title">Paramètres</div>
+      <div class="page-sub">Configuration générale de MarcioStudio</div>
+      <div class="acard">
+        <div class="acard-title">🔒 Sécurité</div>
+        <div class="acard-sub">Gestion des accès administrateur</div>
+        <div class="fg">
+          <label class="fl">Nouveau mot de passe admin</label>
+          <input type="password" class="fi" id="new-adm-pass" placeholder="Nouveau mot de passe">
+        </div>
+        <button class="btn-action" onclick="toast('Fonctionnalité à implémenter côté serveur.','info')">Changer le mot de passe</button>
+      </div>
+      <div class="acard">
+        <div class="acard-title">🏢 Informations entreprise</div>
+        <div class="acard-sub">Personnalisation de la plateforme</div>
+        <div class="fg"><label class="fl">Nom de l'entreprise</label><input type="text" class="fi" value="MarcioStudio"></div>
+        <div class="fg"><label class="fl">Horaire entrée (heure limite)</label><input type="time" class="fi" value="09:00"></div>
+        <div class="fg"><label class="fl">Horaire sortie (minimum)</label><input type="time" class="fi" value="18:00"></div>
+        <button class="btn-action">💾 Sauvegarder</button>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /layout -->
+
+<div class="toasts" id="toasts"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+import {
+  getFirestore, collection, doc, setDoc, getDoc, getDocs, addDoc, updateDoc, deleteDoc,
+  query, where, orderBy, limit, onSnapshot, serverTimestamp, getCountFromServer
+} from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+const FC = {
+  apiKey:"AIzaSyCPGgtXoDUycykLaTSee0S0yY0tkeJpqKI",
+  authDomain:"data-com-a94a8.firebaseapp.com",
+  projectId:"data-com-a94a8",
+  storageBucket:"data-com-a94a8.firebasestorage.app",
+  messagingSenderId:"276904640935",
+  appId:"1:276904640935:web:9cd805aeba6c34c767f682"
+};
+const app = initializeApp(FC);
+const db = getFirestore(app);
+
+// ── FCM SERVER — using OAuth2 token via service account ──
+// IMPORTANT: The private key is used client-side here for demo.
+// In production, move this to a Cloud Function or backend server.
+const SA = {
+  project_id:"data-com-a94a8",
+  client_email:"firebase-adminsdk-fbsvc@data-com-a94a8.iam.gserviceaccount.com",
+  private_key:"-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCykPXvfVaB4ZEE\nY+Mv11RdmoBDkShM/7FGz6Nr7n4xFbQIWu4geRDndGOoxLX1/jN44bSz0r8ypXg9\naNMwlfDC5eF/pof2WANxcxuUIGQ2Ja97R4tKRM7seM15aciVH4aujas4Pe2P2Qc6\nCl9+JBR1uzPrBmWhGzKZd6XBHhH7Ex2sZPDGOcHwVVy3S0COMxKY6L2+/izLAOYb\n0RJ6yg7aBGd1Fu9zsTV6rlKoSdexvbPSHhvVyncM9hIRLswXPs17NBXnegjm3CeN\n2C1mP+v1Bqbt2cl2RU0uPQh/71ejLnRvBv8rnGSjeaNXpoZc2ZU8rZDYe0uGS1lI\ndFEQDs19AgMBAAECggEAAVhnLpaebi7iHlFEug/J0W5lexalH/CMIOfiH58QnK5q\nKZy6BtlY2Yfjpc/ITW5txsBCpFlJmGtc02dseEtJrTlT/ug5sRNMAKJo0HGkSfaI\nwTsh54GVPVN3ekJ0j1YHKcl5GdBkNbD+Xi/RuSsJrcdk+wxvVoRxYBojx6utgSnr\nKqh3aSPVPYoXcSMyUirLWblRIAL+O6eC/NBkfbde7VJaAN59PYTi8HNQDqruKNH+\n9wWM0d+zNFy9A/GmqUlyo2J9H6fERQ0m3Zua2s/LhwFp7tg2c8wLBRXknAApFNIU\nOG5DiNpG+r9Pyx822Ml+DhkApbDhtIesjFSe9zN4uwKBgQDoWVestOxcI6UvDUcu\nP0f7GV00jC7COU02CSi75QNSnQOR4ZtR3CABcr8OzQ1U+DFABfGy8lEgeG/aHk4z\nb6/YpH5tv5FuucaA1beNXZW7EF8DffgAA0brI3oN0EnXMJSAO4povuRNFNDzspKV\nwg8Oyp5xny18EZ9TUgrZz62jiwKBgQDEvh9m4CFSlxrkncj6lFEwMyjA1LAhgVGD\nohX0PHyWGQAlsxJb7x+SFaKvnemaU9jyR2uFDzDlOEYvCCYVfxYKZFh8gSBCg8kR\nrJ6GT/X0ZvbQCKwWkBBhxlF5kPvNOY/BaS6M5eNr3Ps1+NUSAxIbJnlw1UhFDXu5\nF6pY3NLUFwKBgQDMa0Y6uZa13dqHkfwNETnIDmG1SJwe3wEySE6hOPR6a4/negEH\nvU4fWBAF+pv/JLlX5aLnWE/N7Igj88PDd0DTrq1Y61ENhL7DPMRXyH1ibh3Z2asm\nf7uWRsksfBNrEt+kDj5Qt5nuwyCvN23F+kz7K4LI3k3LOUneqXDIfvH6zwKBgCLw\nvPTxQxm+2jjVyNavtod/3nH4k9svc0GUbJ+2ik3B3OPVHKKVIh84lm7n9Y/B6lqE\n0pSL8RwUVWqO4OyaaFiqH4jlCcymSPRJmtGxq7We/6BMmftb1Hz40olrdTyqR1yL\nCIhfX3dNhJO+QGD1iKanu5ONXUteLKXfjRJBDXQ7AoGAICO0j6eO+d16NOln5mO+\nAGDaXKaXJ02VYvn+U4kQwAIoDmY85MCjfkzWFCwrQ1qruoIACyGJg1pGC+FozWx/\nbJJnnpV0URYifeyKRrtAIK1GJ5c1+uPUNszvFYXeN0gU+qikbaDr3XhRkH+LKnEy\n1RuvR30MwZN20EjkfllQ51Q=\n-----END PRIVATE KEY-----\n"
+};
+
+// ── GET FCM ACCESS TOKEN (OAuth2 via JWT — works in browser with jose/subtle) ──
+async function getFCMAccessToken() {
+  // Build JWT header + payload
+  const now = Math.floor(Date.now() / 1000);
+  const header = btoa(JSON.stringify({ alg:'RS256', typ:'JWT' })).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+  const payload = btoa(JSON.stringify({
+    iss: SA.client_email,
+    sub: SA.client_email,
+    aud: 'https://oauth2.googleapis.com/token',
+    iat: now,
+    exp: now + 3600,
+    scope: 'https://www.googleapis.com/auth/firebase.messaging'
+  })).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+  const toSign = `${header}.${payload}`;
+  
+  // Import private key
+  const pemKey = SA.private_key.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\n/g, '');
+  const keyData = Uint8Array.from(atob(pemKey), c => c.charCodeAt(0));
+  const cryptoKey = await crypto.subtle.importKey(
+    'pkcs8', keyData.buffer,
+    { name:'RSASSA-PKCS1-v1_5', hash:'SHA-256' }, false, ['sign']
+  );
+  
+  const sigBytes = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', cryptoKey, new TextEncoder().encode(toSign));
+  const sig = btoa(String.fromCharCode(...new Uint8Array(sigBytes))).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+  const jwt = `${toSign}.${sig}`;
+  
+  // Exchange JWT for access token
+  const res = await fetch('https://oauth2.googleapis.com/token', {
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`
+  });
+  const data = await res.json();
+  if (!data.access_token) throw new Error('Token OAuth2 non obtenu: ' + JSON.stringify(data));
+  return data.access_token;
+}
+
+// ── SEND FCM NOTIFICATION ──
+async function sendFCMNotification(token, title, body, icon = '') {
+  const accessToken = await getFCMAccessToken();
+  const res = await fetch(`https://fcm.googleapis.com/v1/projects/${SA.project_id}/messages:send`, {
+    method:'POST',
+    headers: {
+      'Content-Type':'application/json',
+      'Authorization': `Bearer ${accessToken}`
+    },
+    body: JSON.stringify({
+      message: {
+        token,
+        notification: { title, body },
+        webpush: {
+          notification: {
+            title, body,
+            icon: icon || '/icons/icon-192x192.png',
+            badge: '/icons/icon-192x192.png',
+            click_action: '/dashboard.html'
+          }
+        }
+      }
+    })
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error?.message || 'FCM error');
+  }
+  return await res.json();
+}
+
+// ── SEND TO ALL ──
+window.sendToAll = async () => {
+  const title = document.getElementById('notif-all-title').value.trim();
+  const body  = document.getElementById('notif-all-body').value.trim();
+  const icon  = document.getElementById('notif-all-icon').value.trim() || '🔔';
+  if (!title || !body) { toast('Titre et message requis.', 'err'); return; }
+  const btn = document.getElementById('btn-send-all');
+  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div><span>Envoi en cours…</span>';
+  
+  try {
+    // Get all users with FCM tokens
+    const snap = await getDocs(collection(db, 'users'));
+    const tokens = snap.docs.map(d => d.data().fcmToken).filter(Boolean);
+    if (tokens.length === 0) { toast('Aucun utilisateur avec notifications activées.', 'info'); btn.disabled = false; btn.innerHTML = '<span>📢 Envoyer à tous</span>'; return; }
+    
+    let ok = 0; let fail = 0;
+    for (const token of tokens) {
+      try { await sendFCMNotification(token, title, body, icon); ok++; }
+      catch(e) { fail++; console.warn('FCM fail for token:', e.message); }
+    }
+    
+    // Log to Firestore
+    await addDoc(collection(db, 'notifications_log'), {
+      type: 'all', title, body, icon,
+      sent: ok, failed: fail,
+      total: tokens.length,
+      ts: serverTimestamp(), tsMs: Date.now(),
+      sentBy: 'admin'
+    });
+    
+    toast(`✓ Envoyé à ${ok} collaborateur${ok>1?'s':''} (${fail} échec${fail>1?'s':''})`, 'ok');
+    document.getElementById('notif-all-title').value = '';
+    document.getElementById('notif-all-body').value = '';
+  } catch(e) {
+    toast('Erreur envoi: ' + e.message, 'err');
+    console.error(e);
+  }
+  btn.disabled = false; btn.innerHTML = '<span>📢 Envoyer à tous</span>';
+};
+
+// ── SEND TO SELECTED ──
+window.sendToSelected = async () => {
+  const title = document.getElementById('notif-t-title').value.trim();
+  const body  = document.getElementById('notif-t-body').value.trim();
+  if (!title || !body) { toast('Titre et message requis.', 'err'); return; }
+  const checks = document.querySelectorAll('.user-check-item input:checked');
+  if (checks.length === 0) { toast('Sélectionnez au moins un collaborateur.', 'err'); return; }
+  
+  const btn = document.getElementById('btn-send-targeted');
+  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div><span>Envoi…</span>';
+  
+  let ok = 0; let fail = 0;
+  const targets = [];
+  for (const c of checks) {
+    const token = c.dataset.token;
+    const name  = c.dataset.name;
+    if (token) {
+      targets.push(name);
+      try { await sendFCMNotification(token, title, body, '🎯'); ok++; }
+      catch(e) { fail++; }
+    } else fail++;
+  }
+  
+  await addDoc(collection(db, 'notifications_log'), {
+    type: 'targeted', title, body, targets,
+    sent: ok, failed: fail, total: checks.length,
+    ts: serverTimestamp(), tsMs: Date.now(), sentBy: 'admin'
+  });
+  
+  toast(`✓ Envoyé à ${ok} collaborateur${ok>1?'s':''}`, 'ok');
+  document.getElementById('notif-t-title').value = '';
+  document.getElementById('notif-t-body').value = '';
+  selectAllUsers(false);
+  btn.disabled = false; btn.innerHTML = '<span>🎯 Envoyer aux sélectionnés</span>';
+};
+
+// ── LOAD DATA ──
+let allUsers = [];
+
+async function loadUsers() {
+  const snap = await getDocs(query(collection(db,'users'), orderBy('createdAt','desc')));
+  allUsers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  document.getElementById('users-count').textContent = `— ${allUsers.length} membre${allUsers.length>1?'s':''}`;
+  
+  const tbody = document.getElementById('users-tbody');
+  if (allUsers.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--dim);padding:24px">Aucun collaborateur</td></tr>';
+    return;
+  }
+  tbody.innerHTML = allUsers.map(u => {
+    const av = u.photoURL ? `<img src="${u.photoURL}" alt="" style="width:100%;height:100%;object-fit:cover">` : (u.prenom||'?')[0];
+    const hasFCM = !!u.fcmToken;
+    return `<tr>
+      <td><div class="user-cell">
+        <div class="u-row-av">${av}</div>
+        <div><div style="font-weight:600;font-size:.86rem">${u.prenom||''} ${u.nom||''}</div><div style="font-size:.72rem;color:var(--muted)">${u.contact||''}</div></div>
+      </div></td>
+      <td style="color:var(--muted);font-size:.82rem">${u.dept||'—'}</td>
+      <td><span class="badge ${u.role==='admin'?'b-gold':'b-blue'}">${u.role==='admin'?'Admin':'Collaborateur'}</span></td>
+      <td style="font-size:.8rem;color:var(--muted)">${u.email||'—'}</td>
+      <td><span class="badge ${hasFCM?'b-green':'b-red'}">${hasFCM?'✓ Actif':'✗ Inactif'}</span></td>
+      <td style="display:flex;gap:6px">
+        <button class="btn-action" onclick="toggleAdmin('${u.id}','${u.role}')">${u.role==='admin'?'↓ Retirer admin':'↑ Rendre admin'}</button>
+        <button class="btn-danger" onclick="deleteUser('${u.id}','${u.prenom} ${u.nom}')">Supprimer</button>
+      </td>
+    </tr>`;
+  }).join('');
+  
+  // Fill checkboxes for targeted notifs
+  const cbx = document.getElementById('user-checkboxes');
+  const withToken = allUsers.filter(u => u.fcmToken);
+  document.getElementById('all-recipient-count').textContent = `${withToken.length} destinataire${withToken.length>1?'s':''} avec notifications actives`;
+  if (allUsers.length === 0) { cbx.innerHTML = '<div style="text-align:center;padding:20px;color:var(--dim)">Aucun collaborateur</div>'; return; }
+  cbx.innerHTML = allUsers.map(u => {
+    const av = u.photoURL ? `<img src="${u.photoURL}">` : `<span>${(u.prenom||'?')[0]}</span>`;
+    return `<label class="user-check-item">
+      <input type="checkbox" data-token="${u.fcmToken||''}" data-name="${u.prenom} ${u.nom}" onchange="updateSelectedCount()" ${!u.fcmToken?'disabled title="Pas de token FCM"':''}>
+      <div class="check-av">${av}</div>
+      <div>
+        <div class="check-name">${u.prenom} ${u.nom}${!u.fcmToken?' <span style="color:var(--dim);font-size:.7rem">(pas de notifs)</span>':''}</div>
+        <div class="check-dept">${u.dept||'—'}</div>
+      </div>
+    </label>`;
+  }).join('');
+}
+
+function updateSelectedCount() {
+  const n = document.querySelectorAll('.user-check-item input:checked').length;
+  document.getElementById('selected-count').textContent = n + ' sélectionné' + (n>1?'s':'');
+}
+window.updateSelectedCount = updateSelectedCount;
+
+window.selectAllUsers = (sel) => {
+  document.querySelectorAll('.user-check-item input:not(:disabled)').forEach(c => c.checked = sel);
+  updateSelectedCount();
+};
+
+window.toggleAdmin = async (uid, role) => {
+  const newRole = role === 'admin' ? 'employee' : 'admin';
+  await updateDoc(doc(db,'users',uid), { role: newRole });
+  toast(`Rôle mis à jour → ${newRole === 'admin' ? 'Administrateur' : 'Collaborateur'}`, 'ok');
+  loadUsers();
+};
+
+window.deleteUser = async (uid, name) => {
+  if (!confirm(`Supprimer définitivement ${name} ?`)) return;
+  await deleteDoc(doc(db,'users',uid));
+  toast(`${name} supprimé.`, 'ok');
+  loadUsers();
+};
+
+// ── PRESENCE ──
+function loadPresence() {
+  const todayKey = new Date().toISOString().slice(0,10).replace(/-/g,'');
+  const label = new Date().toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
+  document.getElementById('today-label').textContent = label;
+  document.getElementById('today-label2').textContent = label;
+  
+  onSnapshot(collection(db, `clockins_${todayKey}`), snap => {
+    const tbody = document.getElementById('presence-tbody');
+    if (snap.empty) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--dim);padding:24px">Aucun pointage aujourd\'hui</td></tr>'; return; }
+    tbody.innerHTML = snap.docs.map(d => {
+      const p = d.data();
+      const inT = p.inTime ? new Date(p.inTime).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : '—';
+      const outT = p.outTime ? new Date(p.outTime).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : '—';
+      const dur = (p.inTime && p.outTime) ? Math.floor((p.outTime - p.inTime)/60000) : null;
+      const durStr = dur ? `${Math.floor(dur/60)}h${String(dur%60).padStart(2,'0')}` : '—';
+      const badge = p.outTime ? '<span class="badge b-green">Complet</span>' : p.late ? '<span class="badge b-orange">Retard</span>' : '<span class="badge b-gold">En cours</span>';
+      const av = p.uPhoto ? `<img src="${p.uPhoto}" style="width:100%;height:100%;object-fit:cover">` : `<span>${(p.uName||'?')[0]}</span>`;
+      return `<tr>
+        <td><div class="user-cell"><div class="u-row-av">${av}</div><div><div style="font-weight:600;font-size:.86rem">${p.uName||'—'}</div></div></div></td>
+        <td style="color:var(--muted);font-size:.82rem">${p.uDept||'—'}</td>
+        <td>${inT}</td>
+        <td>${outT}</td>
+        <td>${durStr}</td>
+        <td>${badge}</td>
+      </tr>`;
+    }).join('');
+  });
+}
+
+// ── POSTS MODERATION ──
+function loadPosts() {
+  const q = query(collection(db,'posts'), orderBy('tsMs','desc'), limit(50));
+  onSnapshot(q, snap => {
+    const list = document.getElementById('posts-list');
+    if (snap.empty) { list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--dim)">Aucune publication</div>'; return; }
+    list.innerHTML = snap.docs.map(d => {
+      const p = d.data(); const id = d.id;
+      const tm = new Date(p.tsMs).toLocaleString('fr-FR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+      return `<div style="padding:14px;border-bottom:1px solid rgba(255,255,255,.04);display:flex;align-items:flex-start;gap:12px">
+        <div>
+          <div style="font-size:.88rem;font-weight:700;margin-bottom:3px">${p.uName||'—'} <span style="color:var(--dim);font-weight:400;font-size:.76rem">· ${tm}</span></div>
+          ${p.txt ? `<div style="font-size:.84rem;color:var(--muted);margin-bottom:6px;max-width:500px">${p.txt.slice(0,200)}${p.txt.length>200?'…':''}</div>` : ''}
+          ${p.mediaURL ? `<span class="badge b-blue">📷 Média joint</span>` : ''}
+          <div style="margin-top:6px;font-size:.75rem;color:var(--dim)">❤️ ${p.likeCount||0} j'aime · 💬 ${p.commentCount||0} commentaires</div>
+        </div>
+        <button class="btn-danger" style="margin-left:auto;flex-shrink:0" onclick="adminDeletePost('${id}')">🗑 Supprimer</button>
+      </div>`;
+    }).join('');
+  });
+}
+window.adminDeletePost = async (id) => {
+  if (!confirm('Supprimer cette publication ?')) return;
+  await deleteDoc(doc(db,'posts',id));
+  toast('Publication supprimée.', 'ok');
+};
+
+// ── NOTIF HISTORY ──
+async function loadNotifHistory() {
+  const q = query(collection(db,'notifications_log'), orderBy('tsMs','desc'), limit(50));
+  const snap = await getDocs(q);
+  const list = document.getElementById('notif-history-list');
+  if (snap.empty) { list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--dim)">Aucune notification envoyée</div>'; return; }
+  list.innerHTML = snap.docs.map(d => {
+    const n = d.data();
+    const tm = new Date(n.tsMs).toLocaleString('fr-FR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+    return `<div class="notif-hist-item">
+      <div class="nh-icon">${n.type === 'all' ? '📢' : '🎯'}</div>
+      <div class="nh-info">
+        <div class="nh-title">${n.title}</div>
+        <div class="nh-body">${n.body}</div>
+        <div class="nh-meta">${tm} · Envoyé à ${n.sent}/${n.total} · ${n.type === 'all' ? 'Tous les utilisateurs' : 'Ciblée'}</div>
+      </div>
+      <span class="badge ${n.failed>0?'b-orange':'b-green'}">${n.sent}/${n.total}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── KPI OVERVIEW ──
+async function loadOverview() {
+  onSnapshot(collection(db,'users'), snap => { document.getElementById('kpi-users').textContent = snap.size; });
+  const todayKey = new Date().toISOString().slice(0,10).replace(/-/g,'');
+  onSnapshot(collection(db,`clockins_${todayKey}`), snap => {
+    const late = snap.docs.filter(d => d.data().late).length;
+    document.getElementById('kpi-present').textContent = snap.size;
+    document.getElementById('kpi-late').textContent = late;
+  });
+  onSnapshot(collection(db,'posts'), snap => { document.getElementById('kpi-posts').textContent = snap.size; });
+  
+  // Presence bars (last 7 days)
+  const totalUsers = (await getDocs(collection(db,'users'))).size || 1;
+  const bars = document.getElementById('presence-bars');
+  bars.innerHTML = '';
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0,10).replace(/-/g,'');
+    const label = d.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric'});
+    const snap = await getDocs(collection(db,`clockins_${key}`));
+    const pct = Math.round((snap.size / totalUsers) * 100);
+    bars.innerHTML += `<div class="stat-bar-wrap">
+      <div class="stat-bar-label"><span>${label}</span><span>${pct}%</span></div>
+      <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${pct}%"></div></div>
+    </div>`;
+  }
+  
+  // Recent notifs
+  await loadRecentNotifs();
+}
+
+async function loadRecentNotifs() {
+  const q = query(collection(db,'notifications_log'), orderBy('tsMs','desc'), limit(5));
+  const snap = await getDocs(q);
+  const el = document.getElementById('recent-notifs');
+  if (snap.empty) { el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--dim);font-size:.82rem">Aucune notification envoyée</div>'; return; }
+  el.innerHTML = snap.docs.map(d => {
+    const n = d.data();
+    const tm = new Date(n.tsMs).toLocaleString('fr-FR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+    return `<div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);display:flex;gap:10px;align-items:center">
+      <span style="font-size:1.2rem">${n.type==='all'?'📢':'🎯'}</span>
+      <div style="flex:1">
+        <div style="font-size:.84rem;font-weight:600">${n.title}</div>
+        <div style="font-size:.73rem;color:var(--muted)">${tm} · ${n.sent}/${n.total}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── GPS ──
+window.useMyLocation = () => {
+  navigator.geolocation.getCurrentPosition(pos => {
+    document.getElementById('gps-lat').value = pos.coords.latitude.toFixed(6);
+    document.getElementById('gps-lng').value = pos.coords.longitude.toFixed(6);
+    toast('Position actuelle chargée !', 'ok');
+  }, () => toast('Impossible d\'obtenir la position.', 'err'));
+};
+window.saveGPS = async () => {
+  const lat = parseFloat(document.getElementById('gps-lat').value);
+  const lng = parseFloat(document.getElementById('gps-lng').value);
+  const radius = parseInt(document.getElementById('gps-radius').value);
+  if (!lat || !lng) { toast('Coordonnées invalides.', 'err'); return; }
+  await setDoc(doc(db,'config','gps'), { lat, lng, radius: radius || 300, updatedAt: serverTimestamp() });
+  toast('Zone GPS sauvegardée !', 'ok');
+};
+
+// Load GPS config
+(async () => {
+  const gps = await getDoc(doc(db,'config','gps'));
+  if (gps.exists()) {
+    const d = gps.data();
+    document.getElementById('gps-lat').value = d.lat;
+    document.getElementById('gps-lng').value = d.lng;
+    document.getElementById('gps-radius').value = d.radius || 300;
+  }
+})();
+
+// ── NAV ──
+window.goPage = (id, el) => {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('on'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('pg-' + id).classList.add('on');
+  if (id === 'users') loadUsers();
+  if (id === 'presence') loadPresence();
+  if (id === 'notifications') { loadUsers(); loadNotifHistory(); }
+  if (id === 'posts') loadPosts();
+  if (id === 'overview') loadOverview();
+};
+
+window.switchNotifTab = (tab, el) => {
+  document.querySelectorAll('.ntab').forEach(t => t.classList.remove('on'));
+  document.querySelectorAll('.notif-panel').forEach(p => p.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('np-' + tab).classList.add('on');
+  if (tab === 'history') loadNotifHistory();
+};
+
+// ── LOGOUT ──
+window.doLogout = () => { sessionStorage.removeItem('marciostudio_user'); location.href = 'index.html'; };
+
+// ── TOAST ──
+function toast(msg, type) {
+  const d = document.createElement('div'); d.className = 'toast t-' + type; d.textContent = msg;
+  document.getElementById('toasts').appendChild(d); setTimeout(() => d.remove(), 4500);
+}
+window.toast = toast;
+
+// ── INIT ──
+loadOverview();
+window.addEventListener('online', () => toast('Connexion rétablie !', 'ok'));
+window.addEventListener('offline', () => toast('Mode hors ligne.', 'info'));
+</script>
+</body>
+</html>
